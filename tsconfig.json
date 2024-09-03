@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "CommonJS",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "moduleResolution": "Node",
+    "outDir": "dist",
+    "importsNotUsedAsValues": "remove",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": ["vitest/globals"],
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "strictPropertyInitialization": false
+  },
+  "ts-node": {
+    "require": ["tsconfig-paths/register"]
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"]
+}

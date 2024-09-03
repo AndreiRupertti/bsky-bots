@@ -1,0 +1,19 @@
+{
+  "name": "tsx",
+  "type": "node",
+  "request": "launch",
+  "program": "${workspaceFolder}/src/index.ts",
+  "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/tsx",
+  "console": "integratedTerminal",
+  "internalConsoleOptions": "neverOpen",
+  "skipFiles": ["<node_internals>/**", "${workspaceFolder}/node_modules/**"],
+  "configurations": [
+    {
+      "name": "Debug",
+      "type": "node",
+      "request": "attach",
+      "port": 9229,
+      "skipFiles": ["<node_internals>/**", "${workspaceFolder}/node_modules/**"]
+    }
+  ]
+}

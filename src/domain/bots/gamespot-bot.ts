@@ -17,7 +17,7 @@ const getConfig = () => ({
 
 
 const setImageToBestQuality = (imageUrl: string) => {
-  return imageUrl.replace("screen-medium", "original");
+  return imageUrl.replace("screen_medium", "original");
 };
 
 const extractDescription = (descriptionHtml: string) => {
@@ -63,15 +63,18 @@ export const execute = async () => {
 
   const newArticles = result.data.filter((item) => {
     const lastTimeFrame = subMinutes(new Date(), POST_INTERVAL_MINUTES + 1);
-    return isAfter(item.pubDate, lastTimeFrame);
+    const shouldBeNewPost = isAfter(item.pubDate, lastTimeFrame);
+    console.table({ pubAt: item.pubDate, now: new Date(), lastTimeFrame, shouldBeNewPost });
+
+    return shouldBeNewPost
   })
 
   logger.info(newArticles);
 
   for (const article of newArticles) {
 
-    // const cta = "Read more";
-    const message = `${article.title}\n\n`;
+    const cta = "Read more at:";
+    const message = `${article.title}\n\n${cta}`;
   
     const rt = bskyService.buildMessage(message);
   

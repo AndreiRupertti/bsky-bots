@@ -17,16 +17,13 @@
     "lint:fix": "biome check src/ --fix",
     "format": "biome format src/",
     "test": "vitest run",
-    "prepare": "husky",
-    "migration:run": "typeorm-ts-node-commonjs -d typeorm.config.ts migration:run",
-    "migration:down": "typeorm-ts-node-commonjs -d typeorm.config.ts migration:revert",
-    "migration:create": "typeorm-ts-node-commonjs migration:create",
-    "seed:run": "source .env && PGPASSWORD=$DB_PASSWORD psql -h localhost -U $DB_USERNAME -d $DB_DATABASE -a -f ./src/seeds/initial-seed.sql"
+    "prepare": "husky"
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^7.0.0",
     "@atproto/api": "^0.13.5",
     "cors": "^2.8.5",
+    "date-fns": "^3.6.0",
     "dotenv": "^16.4.5",
     "envalid": "^8.0.0",
     "express": "^4.19.2",

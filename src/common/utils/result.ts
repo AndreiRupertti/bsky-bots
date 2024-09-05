@@ -6,7 +6,10 @@ type IResultOptions<T, E> = {
   success: { status: "success"; isOk: true; isErr: false; data: T };
 };
 
-export const Result = <T, E extends Error>(unsafeOperation: () => T, errorHandler?: (err: unknown) => E): IResult<E | Error, T> => {
+export const Result = <T, E extends Error>(
+  unsafeOperation: () => T,
+  errorHandler?: (err: unknown) => E,
+): IResult<E | Error, T> => {
   try {
     const res = unsafeOperation();
     return ok(res);

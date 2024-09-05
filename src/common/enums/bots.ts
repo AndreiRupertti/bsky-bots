@@ -1,3 +1,3 @@
 export enum Bots {
-    GAMESPOT = 'GamesSpot'
+  GAMESPOT = "GamesSpot",
 }

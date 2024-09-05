@@ -3,81 +3,92 @@ import { error, ok } from "@/common/utils/result";
 import { logger } from "@/server";
 import * as bskyService from "@/services/bskyService";
 import jsdom from "jsdom";
+import { isAfter, subMinutes } from "date-fns";
 const { JSDOM } = jsdom;
+
+export const POST_INTERVAL_MINUTES = 10;
 
 const getConfig = () => ({
   name: Bots.GAMESPOT,
-  url: "https://www.gamespot.com/news/",
-  querySelector: ".promo--object",
+  url: "https://www.gamespot.com/feeds/game-news",
   bskyUser: "BSKY_USER_GAMESPOT",
   bskyPassword: "BSKY_PASSWORD_GAMESPOT",
 });
 
-const scrape = async (config: ReturnType<typeof getConfig>) => {
-  const { url, querySelector, name } = config
+
+const setImageToBestQuality = (imageUrl: string) => {
+  return imageUrl.replace("screen-medium", "original");
+};
+
+const extractDescription = (descriptionHtml: string) => {
+  const html = new JSDOM(descriptionHtml);
+  const paragraphs = [...html.window.document.getElementsByTagName('p')].slice(0, 2)
+
+  return `${paragraphs.map(p => p.textContent).join('').trim().slice(0, 230)}...`
+}
+const readFeed = async (config: ReturnType<typeof getConfig>) => {
+  const { url, name } = config;
   const response = await fetch(url);
 
-  if (!response.ok) return error(`unable to fetch endpoitn for bot ${name}`)
+  if (!response.ok) return error(`unable to fetch endpoint for bot ${name}`);
   const data = await response.text();
 
-  const dom = new JSDOM(data);
+  const dom = new JSDOM(data, { contentType: "text/xml" });
 
-  const latestNews = dom.window.document.querySelector(querySelector);
+  const feedItems = [...dom.window.document.getElementsByTagName("item")];
 
-  if (!latestNews) return error('unable to find latest news')
-  
-  const title = latestNews.querySelector('h2')?.textContent!
-  const description = latestNews.querySelector('span')?.textContent!
-  const imageUrl = latestNews.querySelector('.content img')?.getAttribute('src')!
-  const imageAlt = latestNews.querySelector('.content img')?.getAttribute('alt')!
-  const newsUrl = latestNews.getAttribute('href')!
+  const items = feedItems.map((feedItem) => {
+    const title = feedItem.getElementsByTagName("title")[0]?.textContent!;
+    const newsUrl = feedItem.getElementsByTagName("link")[0]?.textContent!;
+    const description = extractDescription(feedItem.getElementsByTagName("description")[0].textContent!)
+    const pubDate = new Date(feedItem.getElementsByTagName("pubDate")[0].textContent!);
+    const imageUrl = setImageToBestQuality(feedItem.getElementsByTagName("media:content")[0].getAttribute("url")!);
+    const imageAlt = title;
 
-  return ok({ title, description, newsUrl, imageUrl, imageAlt })
+    return { title, description, newsUrl, imageUrl, imageAlt, pubDate };
+  });
+
+  return ok(items);
 };
 
 export const execute = async () => {
-  const config = getConfig()
-  const result = await scrape(config);
+  const config = getConfig();
+  const result = await readFeed(config);
 
   if (result.isErr) {
-    logger.error(result.data.message)
-    return result
+    logger.error(result.data.message);
+    return result;
   }
 
-  const { title, description, imageAlt, imageUrl, newsUrl } = result.data
 
-  const cta = 'Read more'
-  const message = `${title}\n\n${description}\n${cta}`;
+  const newArticles = result.data.filter((item) => {
+    const lastTimeFrame = subMinutes(new Date(), POST_INTERVAL_MINUTES + 1);
+    return isAfter(item.pubDate, lastTimeFrame);
+  })
 
-  const rt = bskyService.buildMessage(message)
+  logger.info(newArticles);
 
-  const postResult = await bskyService.postMessage({
-    identifier: process.env[config.bskyUser]!,
-    passowrd: process.env[config.bskyPassword]!,
-    images: [{ url: imageUrl, alt: description }],
-    facets: [
-      {
-        index: {
-          byteStart: message.length - cta.length,
-          byteEnd: message.length,
-        },
-        features: [
-          {
-            $type: "app.bsky.richtext.facet#link",
-            uri: newsUrl,
-          },
-        ],
-      },
-    ],
-    rt,
-  });
+  for (const article of newArticles) {
 
-  if (postResult.isErr) {
-    logger.error(postResult.data.message)
-    return postResult
+    // const cta = "Read more";
+    const message = `${article.title}\n\n`;
+  
+    const rt = bskyService.buildMessage(message);
+  
+    const postResult = await bskyService.postMessage({
+      identifier: process.env[config.bskyUser]!,
+      passowrd: process.env[config.bskyPassword]!,
+      cardEmbed: { url: article.newsUrl, thumbUrl: article.imageUrl, title: article.title, description: article.description },
+      rt,
+    });
+  
+    if (postResult.isErr) {
+      logger.error(postResult.data.message)
+    }
   }
 
   logger.info("GameSpot handler!");
 
-  return ok('success');
+  return ok("success");
 };
+

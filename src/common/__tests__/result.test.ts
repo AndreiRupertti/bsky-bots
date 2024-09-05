@@ -27,10 +27,13 @@ describe("Result util", () => {
       },
     ];
 
-    it.each(synchronousTestInput)("result should be $expectedResult.status $description ", ({ exec, expectedResult }) => {
-      const result = Result(() => exec());
-      expect(result).toEqual(expectedResult);
-    });
+    it.each(synchronousTestInput)(
+      "result should be $expectedResult.status $description ",
+      ({ exec, expectedResult }) => {
+        const result = Result(() => exec());
+        expect(result).toEqual(expectedResult);
+      },
+    );
 
     it("error should be custom when passing a custom error handler", async () => {
       const unsafeFun = () => {
@@ -75,10 +78,13 @@ describe("Result util", () => {
       },
     ];
 
-    it.each(asynchronousTestInput)("result should be $expectedResult.status $description ", async ({ exec, expectedResult }) => {
-      const result = await ResultAsync(exec() as Promise<string | void>);
-      expect(result).toEqual(expectedResult);
-    });
+    it.each(asynchronousTestInput)(
+      "result should be $expectedResult.status $description ",
+      async ({ exec, expectedResult }) => {
+        const result = await ResultAsync(exec() as Promise<string | void>);
+        expect(result).toEqual(expectedResult);
+      },
+    );
 
     it("error should be custom when passing a custom error handler", async () => {
       const throwPromise = setTimeout(100).then(() => {

@@ -36,6 +36,6 @@ app.use(openAPIRouter);
 // Error handlers
 app.use(errorHandler());
 
-cron.setup()
+cron.setup();
 
 export { app, logger };
